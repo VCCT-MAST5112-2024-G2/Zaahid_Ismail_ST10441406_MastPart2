@@ -27,7 +27,7 @@ export default function AddMenuScreen({ navigation }: AddMenuScreenProps) {
       return;
     }
 
-    const newItem = { dishName, description, course, price: priceValue, imageUrl: null }; // Add imageUrl if applicable
+    const newItem = { dishName, description, course, price: priceValue, imageUrl: null }; 
     navigation.navigate('Home', { newItem });
   };
 
