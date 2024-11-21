@@ -1,0 +1,183 @@
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types';
+
+type AddMenuScreenProps = NativeStackScreenProps<RootStackParamList, 'AddMenu'>;
+
+const AddMenuScreen: React.FC<AddMenuScreenProps> = ({ route, navigation }) => {
+  const { menuItems, setMenuItems } = route.params;
+
+  const [dishName, setDishName] = useState('');
+  const [description, setDescription] = useState('');
+  const [course, setCourse] = useState('');
+  const [price, setPrice] = useState('');
+
+  const handleAddItem = () => {
+    if (!dishName || !description || !course || !price) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    const newItem = {
+      dishName,
+      description,
+      course,
+      price: parseFloat(price),
+    };
+
+    setMenuItems((prevItems: any) => {
+      const updatedItems = [...prevItems, newItem];
+      return updatedItems;
+    });
+
+    setDishName('');
+    setDescription('');
+    setCourse('');
+    setPrice('');
+    navigation.goBack();
+  };
+
+  const handleDeleteItem = (index: number) => {
+    setMenuItems((prevItems: any) => {
+      const updatedItems = [...prevItems];
+      updatedItems.splice(index, 1);
+      return updatedItems;
+    });
+    navigation.goBack();
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Add New Menu Item</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Dish Name"
+        value={dishName}
+        onChangeText={setDishName}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Description"
+        value={description}
+        onChangeText={setDescription}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Course (e.g., Starters, Mains)"
+        value={course}
+        onChangeText={setCourse}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Price"
+        value={price}
+        keyboardType="numeric"
+        onChangeText={setPrice}
+      />
+
+      <TouchableOpacity style={styles.addButton} onPress={handleAddItem}>
+        <Text style={styles.addButtonText}>Add Item</Text>
+      </TouchableOpacity>
+
+      <FlatList
+        data={menuItems}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item, index }) => (
+          <View style={styles.menuItem}>
+            <Text style={styles.menuItemText}>
+              {item.dishName.length > 20 ? item.dishName.substring(0, 17) + '...' : item.dishName}
+            </Text>
+            <Text style={styles.menuItemText}>{item.course}</Text>
+            <Text style={styles.price}>R{item.price.toFixed(2)}</Text>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => handleDeleteItem(index)}
+            >
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+    </View>
+  );
+};
+
+export default AddMenuScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#rgba(128, 0, 0, 1)', 
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingLeft: 8,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+  },
+  addButton: {
+    backgroundColor: 'rgba(222, 49, 99, 1)', 
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginTop: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    padding: 12,
+    marginVertical: 8,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,  
+    marginRight: 10, 
+    overflow: 'hidden', 
+    textOverflow: 'ellipsis', 
+  },
+  price: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '600',
+  },
+  deleteButton: {
+    backgroundColor: '#ff6666',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    marginTop: 8,
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+});
