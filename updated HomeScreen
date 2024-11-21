@@ -1,0 +1,264 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types';
+import Icon from 'react-native-vector-icons/MaterialIcons'; // Importing an icon library
+
+const BruschettaImage = require('../assets/bruschetta.jpg');
+const PrawnPastaImage = require('../assets/pasta.jpg');
+const CheesecakeImage = require('../assets/cheesecake.jpg');
+
+type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
+
+const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => {
+  const initialItems = [
+    { dishName: 'Bruschetta', description: 'Grilled bread with tomato and basil', course: 'Starters', price: 89.99, imageUrl: BruschettaImage },
+    { dishName: 'Prawn Pasta', description: 'Pasta with prawns in a creamy sauce', course: 'Mains', price: 229.99, imageUrl: PrawnPastaImage },
+    { dishName: 'Cheesecake', description: 'Creamy cheesecake', course: 'Desserts', price: 85, imageUrl: CheesecakeImage },
+  ];
+
+  const [menuItems, setMenuItems] = useState(initialItems);
+  const [averagePrices, setAveragePrices] = useState<{ [key: string]: number }>({
+    Starters: 0,
+    Mains: 0,
+    Desserts: 0,
+    AllOptions: 0,
+  });
+
+  useEffect(() => {
+    if (route.params?.newItem) {
+      setMenuItems(prevItems => [...prevItems, route.params.newItem]);
+    }
+    if (route.params?.deletedItemIndex !== undefined) {
+      const updatedItems = [...menuItems];
+      updatedItems.splice(route.params.deletedItemIndex, 1); // Remove item by index
+      setMenuItems(updatedItems);
+    }
+  }, [route.params?.newItem, route.params?.deletedItemIndex]);
+
+  useEffect(() => {
+    calculateAveragePrices();
+  }, [menuItems]);
+
+  const calculateAveragePrices = () => {
+    const pricesByCourse: { [key: string]: number[] } = {
+      Starters: [],
+      Mains: [],
+      Desserts: [],
+      AllOptions: [],
+    };
+
+    menuItems.forEach(item => {
+      pricesByCourse[item.course]?.push(item.price);
+      pricesByCourse.AllOptions.push(item.price);
+    });
+
+    const newAveragePrices: { [key: string]: number } = {};
+    Object.keys(pricesByCourse).forEach(course => {
+      const total = pricesByCourse[course].reduce((acc, price) => acc + price, 0);
+      newAveragePrices[course] = pricesByCourse[course].length
+        ? total / pricesByCourse[course].length
+        : 0;
+    });
+
+    setAveragePrices(newAveragePrices);
+  };
+
+  const additionalOptions = [
+    { name: 'Chili Poppers', course: 'Starters', price: 45 },
+    { name: 'Nachos', course: 'Starters', price: 55 },
+    { name: 'Steak', course: 'Mains', price: 150 },
+    { name: 'Chili Cheese Chicken Wrap', course: 'Mains', price: 130 },
+    { name: 'Tiramisu', course: 'Desserts', price: 75 },
+    { name: 'Malva Pudding', course: 'Desserts', price: 70 },
+  ];
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Chef's Menu</Text>
+
+      <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+        <FlatList
+          data={menuItems}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.menuItem}>
+              <Image source={item.imageUrl} style={styles.menuItemImage} />
+              <View style={styles.menuTextContainer}>
+                <Text style={styles.menuItemText}>{item.dishName} - {item.course}</Text>
+                <Text style={styles.menuItemText}>{item.description}</Text>
+              </View>
+              <Text style={styles.price}>R{item.price.toFixed(2)}</Text>
+            </View>
+          )}
+        />
+
+        <View style={styles.additionalOptionsContainer}>
+          <Text style={styles.additionalOptionsTitle}>Starters:</Text>
+          {additionalOptions.filter(option => option.course === 'Starters').map((option, index) => (
+            <Text key={index} style={styles.additionalOptionText}>
+              {option.name} - R{option.price.toFixed(2)}
+            </Text>
+          ))}
+          <Text style={styles.additionalOptionsTitle}>Mains:</Text>
+          {additionalOptions.filter(option => option.course === 'Mains').map((option, index) => (
+            <Text key={index} style={styles.additionalOptionText}>
+              {option.name} - R{option.price.toFixed(2)}
+            </Text>
+          ))}
+          <Text style={styles.additionalOptionsTitle}>Desserts:</Text>
+          {additionalOptions.filter(option => option.course === 'Desserts').map((option, index) => (
+            <Text key={index} style={styles.additionalOptionText}>
+              {option.name} - R{option.price.toFixed(2)}
+            </Text>
+          ))}
+        </View>
+      </ScrollView>
+
+      <View style={styles.bottomMenu}>
+        <TouchableOpacity style={styles.bottomButton} onPress={() => navigation.navigate('AddMenu', { menuItems, setMenuItems })}>
+          <Text style={styles.buttonText}>Add or Delete Menu Item</Text>
+        </TouchableOpacity>
+
+        <View style={styles.averagePriceContainer}>
+          <Text style={styles.averagePriceText}>
+            Average price for Starters: R{averagePrices.Starters.toFixed(2)}
+          </Text>
+          <Text style={styles.averagePriceText}>
+            Average price for Mains: R{averagePrices.Mains.toFixed(2)}
+          </Text>
+          <Text style={styles.averagePriceText}>
+            Average price for Desserts: R{averagePrices.Desserts.toFixed(2)}
+          </Text>
+          <Text style={styles.averagePriceText}>
+            Overall Average price: R{averagePrices.AllOptions.toFixed(2)}
+          </Text>
+        </View>
+      </View>
+
+      {/* Filter Button */}
+      <TouchableOpacity
+        style={styles.filterButton}
+        onPress={() => navigation.navigate('FilterMenu')}>
+        <Icon name="filter-list" size={30} color="#fff" />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+export default HomeScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: 'rgba(128, 0, 0, 1)',
+    flex: 1,
+    alignItems: 'center',
+    paddingTop: 40,
+    paddingHorizontal: 20,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 24,
+    textShadowColor: 'rgba(0, 0, 0, 0.25)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 4,
+  },
+  scrollViewContainer: {
+    flexGrow: 1,
+    width: '100%',
+    marginBottom: 20,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    padding: 16,
+    marginVertical: 8,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    width: '100%',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  menuItemImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    marginRight: 16,
+  },
+  menuTextContainer: {
+    flex: 1,
+  },
+  menuItemText: {
+    fontSize: 18,
+    marginVertical: 2,
+    color: '#333',
+  },
+  price: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  additionalOptionsContainer: {
+    marginVertical: 10,
+    padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 8,
+    width: '100%',
+    marginBottom: 20,
+  },
+  additionalOptionsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  additionalOptionText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  bottomMenu: {
+    width: '100%',
+    alignItems: 'center',
+    paddingBottom: 30,
+  },
+  bottomButton: {
+    backgroundColor: '#rgba(222, 49, 99, 1)',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginVertical: 5,
+    width: '80%',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  averagePriceContainer: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 8,
+    width: '100%',
+  },
+  averagePriceText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  filterButton: {
+    position: 'absolute',
+    top: 30,
+    right: 20,
+    backgroundColor: 'rgba(222, 49, 99, 1)',
+    padding: 10,
+    borderRadius: 50,
+    elevation: 3,
+  },
+});
